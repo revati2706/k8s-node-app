@@ -1,0 +1,39 @@
+name: "nodejs-app"
+on:
+  push:
+    branches:
+       - main
+
+jobs:
+   build:
+     runs-on: ubuntu-latest
+     steps:
+        - name: checkout code
+          uses: action/checkout@v2
+
+        - name: setup docker buildx
+          uses: docker/setup-buildx-actions@v2
+
+        - name: Docker Build Image in side minikube
+          run:  eval $(minikube -p minikube docker-env)
+               docker build -t my-node-app .
+
+   deploy:
+       needs: build
+       runs-on: self-hosted
+      
+
+       steps: 
+          - name: checkout code
+            uses: action/checkout@v2
+
+          - name: set up kubectl
+            uses: azure/setup-kubectl@v1
+            with:
+               version: latest
+          - name: Deploy to minikube
+            run: eval $(minikube -p minikube docker-env)
+                 kubectl apply -f k8s/deployment.yml
+                 kubectl apply -f k8s/service.yml 
+       
+   
